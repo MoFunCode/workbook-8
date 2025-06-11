@@ -5,7 +5,7 @@ public class Main {
 
     private static final String userName = "root";
     private static final String password = "yearup24";
-    private static final String url = "jdbc:mysql://localhost:3306/sakila";
+    private static final String url = "jdbc:mysql://localhost:3306/northwind";
     private static Scanner sc = new Scanner(System.in);
 
     public static void main(String[] args) throws ClassNotFoundException {
@@ -17,6 +17,7 @@ public class Main {
             System.out.println("What would you like to do? ");
             System.out.println("1. Display all products");
             System.out.println("2. Display all customers");
+            System.out.println("3. Display all categories");
             System.out.println("0. Exit");
             System.out.println("select an option: ");
 
@@ -32,6 +33,9 @@ public class Main {
                     break;
                 case 2:
                     displayAllCustomers();
+                    break;
+                case 3:
+                    displayAllCategories();
                     break;
                 case 0:
                     System.out.println("Goodbye!");
@@ -80,8 +84,8 @@ public class Main {
 
         String customerTableQuery =
                 "SELECT ContactName, CompanyName, City, Country, Phone FROM northwind.Customers ORDER BY Country";
-        try {
-            Connection connectionToCustomerTable = DriverManager.getConnection(url, userName, password);
+        try (Connection connectionToCustomerTable = DriverManager.getConnection(url, userName, password)) {
+            //Connection connectionToCustomerTable = DriverManager.getConnection(url, userName, password);
             PreparedStatement preparedStatement = connectionToCustomerTable.prepareStatement(customerTableQuery);
             ResultSet resultSetForCustomerTable = preparedStatement.executeQuery();
 
@@ -106,8 +110,71 @@ public class Main {
         }
     }
 
-    public static int getIntInput() {
+    public static void displayAllCategories() {
 
+        String categoriesTableQuery = "SELECT * FROM Categories ORDER BY CategoryID";
+
+        try {
+            Connection connectionToCategoriesTable = DriverManager.getConnection(url, userName, password);
+            PreparedStatement preparedStatement = connectionToCategoriesTable.prepareStatement(categoriesTableQuery);
+            ResultSet resultSetForCategoriesable = preparedStatement.executeQuery();
+
+            System.out.println("Available Categories: ");
+            while (resultSetForCategoriesable.next()) {
+                String CategoryID = resultSetForCategoriesable.getString("CategoryID");
+                String CategoryName = resultSetForCategoriesable.getString("CategoryName");
+
+                System.out.println("CategoryID: " + CategoryID);
+                System.out.println("CategoryName: " + CategoryName);
+            }
+
+            displayProductsByCategories();
+
+        } catch (SQLException e) {
+            System.out.println("Database error: " + e.getMessage());
+        }
+
+    }
+
+    public static void displayProductsByCategories() {
+        System.out.println("Please enter a categoryId to see all products:");
+        int userChoice = getIntInput();
+
+
+        String productsByCategoriesQuery =
+                "SELECT ProductID, ProductName, UnitPrice, UnitsInStock FROM northwind.Products WHERE CategoryID = ?";
+
+        try (Connection connection = DriverManager.getConnection(url, userName, password);
+             PreparedStatement preparedStatement = connection.prepareStatement(productsByCategoriesQuery)) {
+
+            preparedStatement.setInt(1, userChoice);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            System.out.println("Products in Category " + userChoice + ":");
+            boolean hasResults = false;
+            while (resultSet.next()) {
+                hasResults = true;
+                int productID = resultSet.getInt("ProductID");
+                String productName = resultSet.getString("ProductName");
+                double unitPrice = resultSet.getDouble("UnitPrice");
+                int unitsInStock = resultSet.getInt("UnitsInStock");
+
+                System.out.println("Product ID: " + productID);
+                System.out.println("Product Name: " + productName);
+                System.out.println("Unit Price: " + unitPrice);
+                System.out.println("Units in Stock: " + unitsInStock);
+            }
+
+            if (!hasResults) {
+                System.out.println("No products found for category ID: " + userChoice);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Database error: " + e.getMessage());
+        }
+    }
+
+    public static int getIntInput() {
         try {
             String input = sc.nextLine().trim();
             return Integer.parseInt(input);
