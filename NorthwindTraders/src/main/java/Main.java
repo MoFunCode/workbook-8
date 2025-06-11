@@ -1,14 +1,24 @@
+import org.apache.commons.dbcp2.BasicDataSource;
+
+import javax.sql.DataSource;
+import javax.xml.crypto.Data;
 import java.sql.*;
 import java.util.Scanner;
 
 public class Main {
 
     private static final String userName = "root";
-    private static final String password = "yearup24";
+    private static final String password = "YYYY";
     private static final String url = "jdbc:mysql://localhost:3306/northwind";
     private static Scanner sc = new Scanner(System.in);
+    //private static BasicDataSource dataSource = new BasicDataSource();
 
     public static void main(String[] args) throws ClassNotFoundException {
+
+       BasicDataSource dataSource = new BasicDataSource();
+       dataSource.setUrl(url);
+       dataSource.setUsername(userName);
+       dataSource.setPassword(password);
 
         Class.forName("com.mysql.cj.jdbc.Driver");
         int userChoice; // Moved declaration outside do-while loop
@@ -29,13 +39,13 @@ public class Main {
 
             switch (userChoice) {
                 case 1:
-                    displayAllProducts();
+                    displayAllProducts(dataSource);
                     break;
                 case 2:
-                    displayAllCustomers();
+                    displayAllCustomers(dataSource);
                     break;
                 case 3:
-                    displayAllCategories();
+                    displayAllCategories(dataSource);
                     break;
                 case 0:
                     System.out.println("Goodbye!");
@@ -48,12 +58,13 @@ public class Main {
         sc.close();
     }
 
-    public static void displayAllProducts() {
+    public static void displayAllProducts(BasicDataSource dataSource) {
         String produtTableQuery = "SELECT ProductID, ProductName, UnitPrice, UnitsINStock FROM northwind.Products";
 
         try {
 
-            Connection connectionToProductTable = DriverManager.getConnection(url, userName, password);
+            Connection connectionToProductTable = dataSource.getConnection();
+                    //DriverManager.getConnection(url, userName, password);
             PreparedStatement preparedStatement = connectionToProductTable.prepareStatement(produtTableQuery);
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -80,11 +91,12 @@ public class Main {
     }
 
 
-    public static void displayAllCustomers() {
+    public static void displayAllCustomers(BasicDataSource dataSource) {
 
         String customerTableQuery =
                 "SELECT ContactName, CompanyName, City, Country, Phone FROM northwind.Customers ORDER BY Country";
-        try (Connection connectionToCustomerTable = DriverManager.getConnection(url, userName, password)) {
+        try (Connection connectionToCustomerTable = dataSource.getConnection()){
+                     //DriverManager.getConnection(url, userName, password)) {
             //Connection connectionToCustomerTable = DriverManager.getConnection(url, userName, password);
             PreparedStatement preparedStatement = connectionToCustomerTable.prepareStatement(customerTableQuery);
             ResultSet resultSetForCustomerTable = preparedStatement.executeQuery();
@@ -110,12 +122,13 @@ public class Main {
         }
     }
 
-    public static void displayAllCategories() {
+    public static void displayAllCategories(BasicDataSource dataSource) {
 
         String categoriesTableQuery = "SELECT * FROM Categories ORDER BY CategoryID";
 
         try {
-            Connection connectionToCategoriesTable = DriverManager.getConnection(url, userName, password);
+            Connection connectionToCategoriesTable =  dataSource.getConnection();
+                    //DriverManager.getConnection(url, userName, password);
             PreparedStatement preparedStatement = connectionToCategoriesTable.prepareStatement(categoriesTableQuery);
             ResultSet resultSetForCategoriesable = preparedStatement.executeQuery();
 
@@ -128,7 +141,7 @@ public class Main {
                 System.out.println("CategoryName: " + CategoryName);
             }
 
-            displayProductsByCategories();
+            displayProductsByCategories(dataSource);
 
         } catch (SQLException e) {
             System.out.println("Database error: " + e.getMessage());
@@ -136,7 +149,7 @@ public class Main {
 
     }
 
-    public static void displayProductsByCategories() {
+    public static void displayProductsByCategories(BasicDataSource dataSource) {
         System.out.println("Please enter a categoryId to see all products:");
         int userChoice = getIntInput();
 
@@ -144,7 +157,8 @@ public class Main {
         String productsByCategoriesQuery =
                 "SELECT ProductID, ProductName, UnitPrice, UnitsInStock FROM northwind.Products WHERE CategoryID = ?";
 
-        try (Connection connection = DriverManager.getConnection(url, userName, password);
+        try (Connection connection =  dataSource.getConnection();
+                     //DriverManager.getConnection(url, userName, password);
              PreparedStatement preparedStatement = connection.prepareStatement(productsByCategoriesQuery)) {
 
             preparedStatement.setInt(1, userChoice);
